@@ -1,4 +1,3 @@
-// main.js
 class RealMadridPredictor {
   constructor() {
     this.form = document.getElementById("predictionForm");
@@ -12,7 +11,7 @@ class RealMadridPredictor {
     this.upcomingDaysSelect = document.getElementById("upcomingDays");
     this.refreshRecentBtn = document.getElementById("refreshRecent");
     this.refreshUpcomingBtn = document.getElementById("refreshUpcoming");
-    this.chart = null; // Store Chart.js instance
+    this.chart = null;
 
     this.init();
   }
@@ -110,6 +109,7 @@ class RealMadridPredictor {
     document.getElementById("lossPercentage").textContent = `${prediction.loss}%`;
     document.getElementById("confidence").textContent = `${prediction.confidence}%`;
     document.getElementById("modelUsed").textContent = prediction.model_used;
+    document.getElementById("predictedScore").textContent = `${prediction.predicted_score} (${prediction.predicted_outcome})`;
     this.resultsContainer.style.display = "block";
     this.resultsContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
     this.animateCounters(prediction);
@@ -142,7 +142,7 @@ class RealMadridPredictor {
   displayPredictionChart(prediction) {
     const ctx = document.getElementById("predictionChart").getContext("2d");
     if (this.chart) {
-      this.chart.destroy(); // Destroy previous chart to prevent overlap
+      this.chart.destroy();
     }
     this.chart = new Chart(ctx, {
       type: 'bar',

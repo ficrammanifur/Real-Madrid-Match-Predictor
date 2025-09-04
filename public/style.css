@@ -114,6 +114,7 @@ body {
   backdrop-filter: blur(10px);
   width: 100%;
   max-width: 600px;
+  margin: 0 auto; /* Ditambahkan untuk memusatkan prediction-card secara horizontal */
 }
 
 .prediction-card h2 {
