@@ -96,6 +96,7 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+> **⚡ Quick Start:** For complete setup commands and troubleshooting, follow the step-by-step guide in [SETUP.md](SETUP.md)
 
 ### 2. Data Structure Setup
 
