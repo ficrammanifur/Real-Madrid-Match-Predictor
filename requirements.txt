@@ -1,0 +1,26 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# Machine Learning
+xgboost==2.0.3
+lightgbm==4.1.0
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+
+# Data Visualization
+matplotlib==3.9.2
+seaborn==0.13.2
+plotly==5.17.0
+
+# API and Web Scraping
+requests==2.32.3
+beautifulsoup4==4.12.2
+
+# Data Processing
+scipy==1.11.4
+joblib==1.4.2
+
+# Development and Testing
+pytest==7.4.3
+jupyter==1.0.0
