@@ -25,14 +25,12 @@ class RealMadridFeatureEngineer:
             'benfica': 76, 'club brugge': 70, 'celtic': 68, 'sturm graz': 60,
             'shakhtar donetsk': 65
         }
-        # Inisialisasi target_encoder dengan kelas yang diharapkan
         self.target_encoder.fit(['Win', 'Draw', 'Loss'])
 
     def create_features(self, df):
         """Membuat fitur untuk pelatihan model"""
         df = df.copy()
 
-        # Menangani kolom venue
         venue_col = None
         possible_venue_cols = ['venue', 'Venue', 'home_away', 'Home_Away']
         for col in possible_venue_cols:
@@ -47,13 +45,10 @@ class RealMadridFeatureEngineer:
         
         df['venue_encoded'] = (df[venue_col] == 'Home').astype(int)
 
-        # Menambahkan kekuatan tim
         df['opponent_strength'] = df['opponent'].str.lower().map(self.team_strengths).fillna(65)
         
-        # Menambahkan bobot kompetisi
         df['competition_weight'] = df['competition'].map(self.competition_weights).fillna(1.0)
         
-        # Memetakan input form dari app.py ke fitur train_model.py
         df['form_points'] = df.get('madrid_form', df.get('form_points', 2.2))
         df['form_xg_for'] = df.get('madrid_xg', df.get('form_xg_for', 1.8))
         df['form_goals_against'] = df.get('madrid_concede', df.get('form_goals_against', 0.7))
@@ -61,10 +56,8 @@ class RealMadridFeatureEngineer:
         df['rest_days'] = df.get('rest_days', 4)
         df['key_players_absent'] = df.get('key_players_out', df.get('key_players_absent', 0))
 
-        # Menghitung selisih ELO (placeholder jika tidak disediakan)
         df['elo_diff'] = df.get('madrid_elo', 2000) - df.get('opponent_elo', 1800)
         
-        # Fitur tambahan yang direkayasa
         df['form_diff'] = df['form_points'] - df['opponent_form_points']
         df['xg_ratio'] = df['form_xg_for'] / df['form_goals_against'].clip(lower=0.1)
         df['strength_advantage'] = 96 - df['opponent_strength']
@@ -73,10 +66,8 @@ class RealMadridFeatureEngineer:
 
     def prepare_features(self, df):
         """Mempersiapkan matriks fitur dan variabel target"""
-        # Membuat fitur
         df = self.create_features(df)
         
-        # Mendefinisikan kolom fitur
         feature_cols = [
             'opponent_strength',
             'venue_encoded',
@@ -94,14 +85,12 @@ class RealMadridFeatureEngineer:
             'key_players_absent'
         ]
         
-        # Memastikan semua kolom fitur ada
         for col in feature_cols:
             if col not in df.columns:
-                df[col] = 0  # Nilai default untuk kolom yang hilang
+                df[col] = 0
         
         X = df[feature_cols]
         
-        # Mempersiapkan variabel target
         y = None
         if 'result' in df.columns:
             y = self.target_encoder.transform(df['result'])
