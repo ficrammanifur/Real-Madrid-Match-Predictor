@@ -1,0 +1,24 @@
+{
+  "xgboost_params": {
+    "n_estimators": 200,
+    "max_depth": 6,
+    "learning_rate": 0.1,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "random_state": 42
+  },
+  "feature_selection": {
+    "method": "recursive_feature_elimination",
+    "n_features": 15
+  },
+  "validation": {
+    "method": "time_series_split",
+    "n_splits": 5,
+    "test_size": 0.2
+  },
+  "elo_config": {
+    "k_factor": 32,
+    "home_advantage": 100,
+    "initial_rating": 1500
+  }
+}
