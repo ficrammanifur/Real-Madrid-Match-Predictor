@@ -10,16 +10,16 @@
 ## 🔧 Installation Steps
 
 ### 1. Clone/Download Project
-\`\`\`bash
+```bash
 # If using git
 git clone https://github.com/ficrammanifur/Real-Madrid-Match-Predictor
 cd real-madrid-predictor
 
 # Or download and extract ZIP
-\`\`\`
+```
 
 ### 2. Create Virtual Environment
-\`\`\`bash
+```sh
 python -m venv venv
 
 # Windows
@@ -27,50 +27,50 @@ venv\Scripts\activate
 
 # macOS/Linux  
 source venv/bin/activate
-\`\`\`
+```
 
 ### 3. Install Dependencies
-\`\`\`bash
+```sh
 pip install -r requirements.txt
-\`\`\`
+```
 
 ### 4. Setup Project Structure
-\`\`\`bash
+```sh
 python scripts/setup_project.py
-\`\`\`
+```
 
 ### 5. Configure API Keys
 Edit `config/api_keys.json`:
 
-\`\`\`json
+```on
 {
   "football_data_org": "YOUR_ACTUAL_API_KEY_HERE"
 }
-\`\`\`
+```
 
 ### 6. Add Real Madrid Logo
 Place logo file in: `public/assets/logo/real-madrid-logo.png`
 
 ### 7. Collect Initial Data
-\`\`\`bash
+```sh
 python scripts/data_collector.py
-\`\`\`
+```
 
 ### 8. Train Model (Optional)
-\`\`\`bash
+```sh
 python scripts/train_model.py
-\`\`\`
+```
 
 ### 9. Run Application
-\`\`\`bash
+```sh
 python3 app.py
-\`\`\`
+```
 
 Open browser: `http://127.0.0.1:5000`
 
 ## 🛠 Quick Commands / Testing
 
-\`\`\`bash
+```sh
 # Pastikan berada di folder project
 cd /media/ficrammanifur/System/github/real-madrid-predictor
 
@@ -96,7 +96,7 @@ curl -X POST http://127.0.0.1:5000/api/predict \
 
 # List tim
 curl http://127.0.0.1:5000/api/team-list
-\`\`\`
+```
 
 ## 📁 File Locations
 
