@@ -1,0 +1,28 @@
+{
+  "accuracy": 0.742,
+  "precision": {
+    "win": 0.78,
+    "draw": 0.65,
+    "loss": 0.71
+  },
+  "recall": {
+    "win": 0.82,
+    "draw": 0.58,
+    "loss": 0.69
+  },
+  "f1_score": {
+    "win": 0.8,
+    "draw": 0.61,
+    "loss": 0.7
+  },
+  "cross_validation_score": 0.735,
+  "feature_importance": {
+    "elo_difference": 0.23,
+    "venue_advantage": 0.18,
+    "form_rating": 0.16,
+    "opponent_strength": 0.14,
+    "injury_impact": 0.12,
+    "rest_days": 0.09,
+    "xG_ratio": 0.08
+  }
+}
