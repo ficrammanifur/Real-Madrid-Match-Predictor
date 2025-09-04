@@ -1,0 +1,56 @@
+{
+  "players": [
+    {
+      "id": 1,
+      "name": "Vinicius Jr",
+      "position": "LW",
+      "nationality": "Brazil",
+      "age": 24,
+      "market_value": 180000000,
+      "goals_season": 12,
+      "assists_season": 8,
+      "injury_status": "fit",
+      "form_rating": 8.5,
+      "minutes_played": 1890
+    },
+    {
+      "id": 2,
+      "name": "Kylian Mbappe",
+      "position": "CF",
+      "nationality": "France",
+      "age": 25,
+      "market_value": 200000000,
+      "goals_season": 15,
+      "assists_season": 6,
+      "injury_status": "fit",
+      "form_rating": 9.2,
+      "minutes_played": 2010
+    },
+    {
+      "id": 3,
+      "name": "Jude Bellingham",
+      "position": "CM",
+      "nationality": "England",
+      "age": 21,
+      "market_value": 150000000,
+      "goals_season": 8,
+      "assists_season": 12,
+      "injury_status": "fit",
+      "form_rating": 8.8,
+      "minutes_played": 2150
+    },
+    {
+      "id": 4,
+      "name": "Luka Modric",
+      "position": "CM",
+      "nationality": "Croatia",
+      "age": 39,
+      "market_value": 10000000,
+      "goals_season": 2,
+      "assists_season": 8,
+      "injury_status": "minor_knock",
+      "form_rating": 7.8,
+      "minutes_played": 1456
+    }
+  ]
+}

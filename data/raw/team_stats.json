@@ -1,0 +1,21 @@
+{
+  "real_madrid": {
+    "season": "2024-25",
+    "matches_played": 15,
+    "wins": 12,
+    "draws": 2,
+    "losses": 1,
+    "goals_for": 35,
+    "goals_against": 12,
+    "xG_for": 38.5,
+    "xG_against": 15.2,
+    "avg_possession": 64.8,
+    "avg_shots_per_game": 15.2,
+    "avg_shots_on_target": 6.8,
+    "clean_sheets": 8,
+    "home_record": { "W": 7, "D": 1, "L": 0 },
+    "away_record": { "W": 5, "D": 1, "L": 1 },
+    "form_last_5": ["W", "W", "D", "W", "W"],
+    "elo_rating": 2156
+  }
+}

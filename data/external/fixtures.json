@@ -1,0 +1,18 @@
+{
+  "upcoming_matches": [
+    {
+      "date": "2024-12-15",
+      "opponent": "Atalanta",
+      "competition": "Champions League",
+      "venue": "Home",
+      "kickoff": "21:00"
+    },
+    {
+      "date": "2024-12-22",
+      "opponent": "Sevilla",
+      "competition": "La Liga",
+      "venue": "Away",
+      "kickoff": "16:15"
+    }
+  ]
+}

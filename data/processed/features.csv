@@ -1,0 +1,4 @@
+match_id,opponent_strength,venue_advantage,form_rating,rest_days,injury_impact,elo_diff,xG_ratio,possession_diff,shot_accuracy,defensive_rating
+1,0.75,1.0,0.85,3,0.1,156,1.8,0.12,0.45,0.82
+2,0.65,0.0,0.88,7,0.05,201,2.1,0.18,0.52,0.79
+3,0.70,1.0,0.82,4,0.15,178,1.6,0.08,0.41,0.85
