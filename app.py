@@ -6,14 +6,27 @@ import numpy as np
 from datetime import datetime, timedelta
 import joblib
 import requests
-from scripts.feature_engineering import RealMadridFeatureEngineer
-import warnings
-warnings.filterwarnings('ignore')
+import logging
+import sys
 
-app = Flask(__name__)
+# Menambahkan direktori saat ini dan direktori induk ke sys.path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts'))
+
+try:
+    from feature_engineering import RealMadridFeatureEngineer
+except ImportError as e:
+    print("Error: Tidak dapat mengimpor RealMadridFeatureEngineer. Pastikan feature_engineering.py ada di direktori scripts.")
+    raise
+
+app = Flask(__name__, static_folder='public', static_url_path='/static')
 CORS(app)
 
-FOOTBALL_DATA_API_KEY = "9f8afca8102b4593896fc7943b920930"  # Replace with your actual API key
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+FOOTBALL_DATA_API_KEY = "9f8afca8102b4593896fc7943b920930"  # Ganti dengan kunci API Anda
 FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
 
 class AdvancedRealMadridPredictor:
@@ -21,55 +34,53 @@ class AdvancedRealMadridPredictor:
         self.model = None
         self.feature_engineer = None
         self.feature_names = None
-        self.target_encoder = None
         self.is_trained = False
-        
-        self.team_strengths = {
-            'athletic club': 75, 'atletico madrid': 85, 'barcelona': 95, 'celta vigo': 60,
-            'deportivo alaves': 58, 'elche cf': 55, 'espanyol': 58, 'getafe cf': 62,
-            'girona': 63, 'levante': 57, 'mallorca': 59, 'osasuna': 60,
-            'real betis': 65, 'real madrid': 96, 'real sociedad': 68, 'rayo vallecano': 59,
-            'sevilla': 76, 'valencia': 70, 'villarreal': 72,
-            'atalanta': 78, 'manchester city': 94, 'arsenal': 82, 'liverpool': 90,
-            'aston villa': 75, 'bayer leverkusen': 80, 'vfb stuttgart': 73, 'bayern munich': 92,
-            'rb leipzig': 77, 'borussia dortmund': 79, 'inter milan': 82, 'ac milan': 80,
-            'juventus': 83, 'bologna': 68, 'paris saint-germain': 88, 'monaco': 72,
-            'brest': 65, 'psv eindhoven': 74, 'feyenoord': 73, 'sporting cp': 75,
-            'benfica': 76, 'club brugge': 70, 'celtic': 68, 'sturm graz': 60,
-            'shakhtar donetsk': 65
-        }
-        
         self.competition_weights = {
             'Champions League': 1.4,
             'La Liga': 1.0,
             'Copa del Rey': 0.8,
             'Club World Cup': 0.9
         }
-        
-        self.load_model(model_path)
+        # Mengatur jalur model ke direktori induk
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.model_path = os.path.join(base_dir, model_path)
+        self.load_model()
 
-    def load_model(self, model_path):
-        """Load the trained XGBoost model and feature engineer"""
+    def load_model(self):
+        """Memuat model XGBoost yang telah dilatih dan feature engineer"""
         try:
-            model_data = joblib.load(model_path)
+            model_data = joblib.load(self.model_path)
             self.model = model_data['model']
             self.feature_engineer = model_data['feature_engineer']
             self.feature_names = model_data['feature_names']
-            self.target_encoder = model_data['target_encoder']
             self.is_trained = True
-            print(f"Model loaded successfully from {model_path}")
+            logger.info(f"Model berhasil dimuat dari {self.model_path}")
         except Exception as e:
-            print(f"Error loading model: {str(e)}. Falling back to untrained state.")
+            logger.error(f"Error memuat model: {str(e)}. Menggunakan status belum dilatih.")
+            self.feature_engineer = RealMadridFeatureEngineer()
             self.is_trained = False
+
+    def predict_score(self, form_xg_for, form_xg_against, outcome, venue):
+        """Memperkirakan skor berdasarkan xG dan hasil prediksi"""
+        home_goals = round(form_xg_for * (1.1 if venue == 'Home' else 0.9))
+        away_goals = round(form_xg_against * (0.9 if venue == 'Home' else 1.1))
+        
+        if outcome == 'Win':
+            home_goals = max(home_goals, away_goals + 1)
+        elif outcome == 'Loss':
+            away_goals = max(away_goals, home_goals + 1)
+        elif outcome == 'Draw':
+            home_goals = away_goals = max(home_goals, away_goals)
+        
+        return home_goals, away_goals
 
     def predict_match(self, opponent, competition, venue, madrid_form=2.2, 
                      madrid_xg=1.8, madrid_concede=0.7, opponent_form=1.5, 
                      rest_days=4, key_players_out=0):
-        """Predict match outcome using the trained XGBoost model"""
+        """Prediksi hasil pertandingan menggunakan model XGBoost"""
         if not self.is_trained:
             return self._fallback_prediction(opponent, competition, venue)
 
-        # Create single match DataFrame
         match_data = {
             'opponent': [opponent],
             'competition': [competition],
@@ -91,20 +102,19 @@ class AdvancedRealMadridPredictor:
         }
         
         match_df = pd.DataFrame(match_data)
-        
-        # Prepare features
         X_match, _, _ = self.feature_engineer.prepare_features(match_df)
         
-        # Predict
         probabilities = self.model.predict_proba(X_match)[0]
+        predicted_class = self.model.predict(X_match)[0]
         
-        # Ensure correct class ordering (Draw, Loss, Win)
-        class_mapping = {i: cls for i, cls in enumerate(self.target_encoder.classes_)}
-        win_idx = self.target_encoder.transform(['Win'])[0]
-        draw_idx = self.target_encoder.transform(['Draw'])[0]
-        loss_idx = self.target_encoder.transform(['Loss'])[0]
+        class_mapping = {i: cls for i, cls in enumerate(self.feature_engineer.target_encoder.classes_)}
+        win_idx = self.feature_engineer.target_encoder.transform(['Win'])[0]
+        draw_idx = self.feature_engineer.target_encoder.transform(['Draw'])[0]
+        loss_idx = self.feature_engineer.target_encoder.transform(['Loss'])[0]
         
-        # Calculate confidence based on max probability
+        outcome = class_mapping[predicted_class]
+        home_goals, away_goals = self.predict_score(madrid_xg, madrid_concede, outcome, venue)
+        
         max_prob = max(probabilities)
         confidence = min(95, 50 + (max_prob - 0.33) * 150)
         
@@ -113,13 +123,15 @@ class AdvancedRealMadridPredictor:
             'draw': round(probabilities[draw_idx] * 100, 1),
             'loss': round(probabilities[loss_idx] * 100, 1),
             'confidence': round(confidence, 1),
-            'model_used': 'XGBoost'
+            'model_used': 'XGBoost',
+            'predicted_outcome': outcome,
+            'predicted_score': f"{home_goals}-{away_goals}"
         }
 
     def _fallback_prediction(self, opponent, competition, venue):
-        """Fallback prediction method if model fails"""
-        opponent_strength = self.team_strengths.get(opponent.lower(), 65)
-        rm_strength = 96
+        """Prediksi cadangan jika model gagal"""
+        opponent_strength = self.feature_engineer.team_strengths.get(opponent.lower(), 65)
+        rm_strength = self.feature_engineer.team_strengths.get('real madrid', 96)
         if venue == 'Home':
             rm_strength += 8
         else:
@@ -139,16 +151,23 @@ class AdvancedRealMadridPredictor:
         draw_prob /= total
         loss_prob /= total
         confidence = min(95, 50 + abs(strength_diff) * 2)
+        
+        outcome = 'Win' if win_prob > max(draw_prob, loss_prob) else 'Draw' if draw_prob > loss_prob else 'Loss'
+        home_goals = 2 if outcome == 'Win' else 1 if outcome == 'Draw' else 0
+        away_goals = 0 if outcome == 'Win' else 1 if outcome == 'Draw' else 2
+        
         return {
             'win': round(win_prob * 100, 1),
             'draw': round(draw_prob * 100, 1),
             'loss': round(loss_prob * 100, 1),
             'confidence': round(confidence, 1),
-            'model_used': 'Statistical'
+            'model_used': 'Statistical',
+            'predicted_outcome': outcome,
+            'predicted_score': f"{home_goals}-{away_goals}"
         }
 
     def get_real_madrid_matches(self, days_back=30):
-        """Fetch Real Madrid's recent matches from Football Data API"""
+        """Ambil pertandingan terbaru Real Madrid dari API"""
         try:
             headers = {'X-Auth-Token': FOOTBALL_DATA_API_KEY}
             team_id = 86
@@ -196,14 +215,14 @@ class AdvancedRealMadridPredictor:
                     matches.append(match_info)
                 return matches
             else:
-                print(f"API Error: {response.status_code} - {response.text}")
+                logger.error(f"API Error: {response.status_code} - {response.text}")
                 return []
         except Exception as e:
-            print(f"Error fetching matches: {str(e)}")
+            logger.error(f"Error mengambil pertandingan: {str(e)}")
             return []
 
     def _determine_result(self, home_score, away_score, is_home):
-        """Determine match result from Real Madrid's perspective"""
+        """Menentukan hasil pertandingan dari perspektif Real Madrid"""
         if is_home:
             if home_score > away_score:
                 return 'Win'
@@ -220,7 +239,7 @@ class AdvancedRealMadridPredictor:
                 return 'Draw'
 
     def get_upcoming_matches(self, days_ahead=30):
-        """Fetch Real Madrid's upcoming matches"""
+        """Ambil jadwal pertandingan Real Madrid"""
         try:
             headers = {'X-Auth-Token': FOOTBALL_DATA_API_KEY}
             team_id = 86
@@ -249,38 +268,38 @@ class AdvancedRealMadridPredictor:
                     matches.append(match_info)
                 return matches
             else:
-                print(f"API Error: {response.status_code} - {response.text}")
+                logger.error(f"API Error: {response.status_code} - {response.text}")
                 return []
         except Exception as e:
-            print(f"Error fetching upcoming matches: {str(e)}")
+            logger.error(f"Error mengambil jadwal pertandingan: {str(e)}")
             return []
 
-# Initialize predictor
-predictor = AdvancedRealMadridPredictor(model_path='real_madrid_model.pkl')
+# Inisialisasi predictor
+predictor = AdvancedRealMadridPredictor()
 
 @app.route('/')
 def serve_index():
-    """Serve the main HTML file"""
+    """Menyajikan file HTML utama"""
     return send_from_directory('public', 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """Serve static files"""
+    """Menyajikan file statis"""
     return send_from_directory('public', path)
 
 @app.route('/api/predict', methods=['POST'])
 def predict_match():
-    """API endpoint for match prediction"""
+    """Endpoint API untuk prediksi pertandingan"""
     try:
         data = request.get_json()
         if not data or not all(key in data for key in ['opponent', 'competition', 'venue']):
-            return jsonify({'error': 'Missing required fields'}), 400
+            return jsonify({'error': 'Field yang diperlukan tidak lengkap'}), 400
         
         opponent = data['opponent'].strip()
         competition = data['competition']
         venue = data['venue']
         if not opponent:
-            return jsonify({'error': 'Opponent name cannot be empty'}), 400
+            return jsonify({'error': 'Nama lawan tidak boleh kosong'}), 400
         
         madrid_form = float(data.get('madridForm', 2.2))
         madrid_xg = float(data.get('madridXg', 1.8))
@@ -300,15 +319,16 @@ def predict_match():
         prediction['venue'] = venue
         prediction['timestamp'] = str(int(datetime.now().timestamp()))
         
+        logger.info(f"Prediksi untuk {opponent}: {prediction}")
         return jsonify(prediction)
         
     except Exception as e:
-        print(f"Prediction error: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f"Error prediksi: {str(e)}")
+        return jsonify({'error': 'Kesalahan server internal'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Endpoint pemeriksaan kesehatan"""
     return jsonify({
         'status': 'healthy',
         'service': 'Real Madrid Match Predictor',
@@ -317,7 +337,7 @@ def health_check():
 
 @app.route('/api/recent-matches', methods=['GET'])
 def get_recent_matches():
-    """Get Real Madrid's recent matches"""
+    """Ambil pertandingan terbaru Real Madrid"""
     try:
         days_back = request.args.get('days', 30, type=int)
         matches = predictor.get_real_madrid_matches(days_back)
@@ -326,12 +346,12 @@ def get_recent_matches():
             'count': len(matches)
         })
     except Exception as e:
-        print(f"Recent matches error: {str(e)}")
-        return jsonify({'error': 'Failed to fetch recent matches'}), 500
+        logger.error(f"Error pertandingan terbaru: {str(e)}")
+        return jsonify({'error': 'Gagal mengambil pertandingan terbaru'}), 500
 
 @app.route('/api/upcoming-matches', methods=['GET'])
 def get_upcoming_matches():
-    """Get Real Madrid's upcoming matches"""
+    """Ambil jadwal pertandingan Real Madrid"""
     try:
         days_ahead = request.args.get('days', 30, type=int)
         matches = predictor.get_upcoming_matches(days_ahead)
@@ -340,21 +360,25 @@ def get_upcoming_matches():
             'count': len(matches)
         })
     except Exception as e:
-        print(f"Upcoming matches error: {str(e)}")
-        return jsonify({'error': 'Failed to fetch upcoming matches'}), 500
+        logger.error(f"Error jadwal pertandingan: {str(e)}")
+        return jsonify({'error': 'Gagal mengambil jadwal pertandingan'}), 500
 
 @app.route('/api/team-list', methods=['GET'])
 def get_team_list():
-    """Get list of available teams for prediction"""
-    teams = list(predictor.team_strengths.keys())
-    teams.sort()
-    return jsonify({
-        'teams': teams,
-        'count': len(teams)
-    })
+    """Ambil daftar tim yang tersedia untuk prediksi"""
+    try:
+        teams = list(predictor.feature_engineer.team_strengths.keys())
+        teams.sort()
+        return jsonify({
+            'teams': teams,
+            'count': len(teams)
+        })
+    except Exception as e:
+        logger.error(f"Error mengambil daftar tim: {str(e)}")
+        return jsonify({'error': 'Gagal mengambil daftar tim'}), 500
 
 def print_hala_madrid():
-    """Print Hala Madrid ASCII art"""
+    """Cetak seni ASCII Hala Madrid"""
     print(r"""
  _    _       _          __  __           _      _     _ 
 | |  | |     | |        |  \/  |         | |    (_)   | |
@@ -362,7 +386,7 @@ def print_hala_madrid():
 |  __  |/ _` | |/ _` |  | |\/| |/ _` |/ _` |  __| |/ _` |
 | |  | | (_| | | (_| |  | |  | | (_| | (_| | |  | | (_| |
 |_|  |_|___,_|_|\__,_|  |_|  |_|__,__|__,__|_|  |_|__,__|
-                                                                                 
+                                                                              
         ⚪ Hala Madrid! ⚪
     """)
 
@@ -373,4 +397,3 @@ if __name__ == '__main__':
     print("📁 Letakkan logo Real Madrid di: public/assets/logo/real-madrid-logo.png")
     print("🌐 Server akan berjalan di: http://127.0.0.1:5000")
     app.run(debug=True, host='127.0.0.1', port=5000)
-
