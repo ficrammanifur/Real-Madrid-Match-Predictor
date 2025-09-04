@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Madrid Match Predictor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/logo/real-madrid-logo.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <img src="assets/logo/real-madrid-logo.png" alt="Real Madrid Logo" class="logo">
+                <h1>Real Madrid Match Predictor</h1>
+            </div>
+            <p class="subtitle">Prediksi hasil pertandingan Los Blancos dengan teknologi machine learning</p>
+        </header>
+
+        <main class="main-content">
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="prediction">Prediksi</button>
+                <button class="tab-btn" data-tab="recent">Hasil Terbaru</button>
+                <button class="tab-btn" data-tab="upcoming">Jadwal</button>
+            </div>
+
+            <div id="prediction-tab" class="tab-content active">
+                <div class="prediction-card">
+                    <h2>Input Data Pertandingan</h2>
+                    <form id="predictionForm" class="prediction-form">
+                        <div class="form-group">
+                            <label for="opponent">Nama Lawan:</label>
+                            <input type="text" id="opponent" name="opponent" placeholder="Contoh: Barcelona, Bayern Munich" required>
+                            <datalist id="teamSuggestions"></datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="competition">Kompetisi:</label>
+                            <select id="competition" name="competition" required>
+                                <option value="">Pilih Kompetisi</option>
+                                <option value="La Liga">La Liga</option>
+                                <option value="Champions League">Champions League</option>
+                                <option value="Copa del Rey">Copa del Rey</option>
+                                <option value="Club World Cup">Club World Cup</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="venue">Venue:</label>
+                            <select id="venue" name="venue" required>
+                                <option value="">Pilih Venue</option>
+                                <option value="Home">Home (Santiago Bernabéu)</option>
+                                <option value="Away">Away (Tandang)</option>
+                            </select>
+                        </div>
+
+                        <div class="advanced-features">
+                            <h3>Parameter Lanjutan (Opsional)</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="madridForm">Form Madrid (Poin/Match):</label>
+                                    <input type="number" id="madridForm" name="madridForm" step="0.1" min="0" max="3" value="2.2" placeholder="2.2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="madridXg">xG Madrid (Rata-rata):</label>
+                                    <input type="number" id="madridXg" name="madridXg" step="0.1" min="0" max="5" value="1.8" placeholder="1.8">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="madridConcede">Kebobolan Madrid (Rata-rata):</label>
+                                    <input type="number" id="madridConcede" name="madridConcede" step="0.1" min="0" max="3" value="0.7" placeholder="0.7">
+                                </div>
+                                <div class="form-group">
+                                    <label for="opponentForm">Form Lawan (Poin/Match):</label>
+                                    <input type="number" id="opponentForm" name="opponentForm" step="0.1" min="0" max="3" value="1.5" placeholder="1.5">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="restDays">Hari Istirahat:</label>
+                                    <input type="number" id="restDays" name="restDays" min="1" max="14" value="4" placeholder="4">
+                                </div>
+                                <div class="form-group">
+                                    <label for="keyPlayersOut">Pemain Kunci Absen:</label>
+                                    <input type="number" id="keyPlayersOut" name="keyPlayersOut" min="0" max="5" value="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="predict-btn">
+                            <span class="btn-text">Prediksi Hasil</span>
+                            <div class="loading-spinner" style="display: none;"></div>
+                        </button>
+                    </form>
+
+                    <div id="results" class="results-container" style="display: none;">
+                        <h3>Hasil Prediksi</h3>
+                        <div class="prediction-results">
+                            <div class="result-item win">
+                                <span class="result-label">Menang</span>
+                                <span class="result-percentage" id="winPercentage">0%</span>
+                            </div>
+                            <div class="result-item draw">
+                                <span class="result-label">Seri</span>
+                                <span class="result-percentage" id="drawPercentage">0%</span>
+                            </div>
+                            <div class="result-item loss">
+                                <span class="result-label">Kalah</span>
+                                <span class="result-percentage" id="lossPercentage">0%</span>
+                            </div>
+                        </div>
+                        <div class="prediction-confidence">
+                            <p>Tingkat Kepercayaan: <span id="confidence">0%</span></p>
+                            <p class="model-type">Model: <span id="modelUsed">XGBoost</span></p>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="predictionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>📊 Fitur Machine Learning</h3>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <strong>Form Madrid:</strong> Rata-rata poin per pertandingan dalam 5 match terakhir (0-3)
+                        </div>
+                        <div class="feature-item">
+                            <strong>xG (Expected Goals):</strong> Rata-rata peluang gol yang diciptakan Madrid
+                        </div>
+                        <div class="feature-item">
+                            <strong>Kebobolan:</strong> Rata-rata gol yang diterima Madrid per pertandingan
+                        </div>
+                        <div class="feature-item">
+                            <strong>Pemain Kunci Absen:</strong> Jumlah pemain inti yang tidak bisa bermain
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recent-tab" class="tab-content">
+                <div class="matches-card">
+                    <h2>🏆 Hasil Pertandingan Terbaru</h2>
+                    <div class="matches-controls">
+                        <button id="refreshRecent" class="refresh-btn">Refresh Data</button>
+                        <select id="recentDays">
+                            <option value="7">7 Hari Terakhir</option>
+                            <option value="30" selected>30 Hari Terakhir</option>
+                            <option value="60">60 Hari Terakhir</option>
+                        </select>
+                    </div>
+                    <div id="recentMatches" class="matches-list">
+                        <div class="loading-message">Memuat data pertandingan...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="upcoming-tab" class="tab-content">
+                <div class="matches-card">
+                    <h2>📅 Jadwal Pertandingan</h2>
+                    <div class="matches-controls">
+                        <button id="refreshUpcoming" class="refresh-btn">Refresh Data</button>
+                        <select id="upcomingDays">
+                            <option value="7">7 Hari Ke Depan</option>
+                            <option value="30" selected>30 Hari Ke Depan</option>
+                            <option value="60">60 Hari Ke Depan</option>
+                        </select>
+                    </div>
+                    <div id="upcomingMatches" class="matches-list">
+                        <div class="loading-message">Memuat jadwal pertandingan...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Real Madrid Match Predictor. Hala Madrid!</p>
+        </footer>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
