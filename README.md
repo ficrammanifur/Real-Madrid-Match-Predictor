@@ -7,6 +7,10 @@
   <img src="https://img.shields.io/badge/Football%20Data-API-orange?style=for-the-badge&logo=api" />
 </p>
 
+<p align="center">
+  <img src="assets/preview.png" width="700" alt="Preview"/>
+</p>
+
 ## 🎯 Overview
 
 Sistem prediksi pertandingan Real Madrid berbasis machine learning dengan akurasi tinggi menggunakan XGBoost dan 30+ engineered features. Dilengkapi dengan integrasi real-time football-data.org API untuk data pertandingan terkini, analisis mendalam, dan interface web modern dengan tema Real Madrid.
